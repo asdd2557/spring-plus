@@ -26,6 +26,8 @@ public class User extends Timestamped {
 
     private String password;
 
+    private String nickname; // 중복 가능하도록 설정
+
     @Enumerated(EnumType.STRING)
     private UserRole userRole;
 
@@ -33,12 +35,10 @@ public class User extends Timestamped {
         return User.builder()
                 .id(Long.parseLong(authUser.getUsername()))
                 .email(authUser.getEmail())
+                .nickname(authUser.getNickname()) // AuthUser에서 닉네임 추가
                 .userRole(authUser.getUserRole())
                 .build();
     }
-
-
-
 
     public void changePassword(String password) {
         this.password = password;
@@ -48,4 +48,7 @@ public class User extends Timestamped {
         this.userRole = userRole;
     }
 
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }

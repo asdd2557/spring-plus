@@ -12,10 +12,12 @@ import java.util.Collection;
 public class AuthUser extends User {
 
     private final String email;
+    private final String nickname;
 
-    public AuthUser(Long id, String password, String email, Collection<? extends GrantedAuthority> authorities) {
+    public AuthUser(Long id, String password, String email,String nickname,Collection<? extends GrantedAuthority> authorities) {
         super(String.valueOf(id), password, authorities);
         this.email = email;
+        this.nickname = nickname;
     }
 
     public UserRole getUserRole() {
@@ -24,4 +26,6 @@ public class AuthUser extends User {
                 .findFirst()
                 .orElseThrow(() -> new InvalidRequestException("유효하지 않은 권한입니다."));
     }
+
+
 }
