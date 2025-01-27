@@ -15,11 +15,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.security.core.authority.SimpleGrantedAuthority; // 추가
+
+import org.springframework.security.core.authority.SimpleGrantedAuthority; // 추가
 
 @WebMvcTest(TodoController.class)
 class TodoControllerTest {
@@ -35,9 +39,21 @@ class TodoControllerTest {
         // given
         long todoId = 1L;
         String title = "title";
-        AuthUser authUser = new AuthUser(1L, "email", UserRole.USER);
+
+        // AuthUser 객체 생성 시 필요한 권한 리스트 추가
+        List<SimpleGrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(UserRole.USER.name()));
+
+        AuthUser authUser = new AuthUser(
+                1L,                    // ID
+                "testName",            // Name
+                "email",               // Email
+                UserRole.USER.name(),  // Role
+                authorities            // Authorities
+        );
+
         User user = User.fromAuthUser(authUser);
         UserResponse userResponse = new UserResponse(user.getId(), user.getEmail());
+
         TodoResponse response = new TodoResponse(
                 todoId,
                 title,

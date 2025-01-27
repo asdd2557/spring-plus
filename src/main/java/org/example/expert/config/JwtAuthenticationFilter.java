@@ -35,22 +35,26 @@ class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtUtil.extractClaims(token);
             UserRole userRole = UserRole.valueOf(claims.get("userRole", String.class));
 
-//            String username = jwtUtil.getUsernameFromToken(token);
-//            UserRole userRole = jwtUtil.getRolesFromToken(token);
+            // `SimpleGrantedAuthority`로 권한 생성
+            List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(userRole.name()));
 
-//            List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(userRole.name()));
-//
-//            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-//                    username, null, authorities
-//            );
-//
-//            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            AuthUser authUser = new AuthUser(Long.parseLong(claims.getSubject()), "", (String) claims.get("email"), List.of(userRole::name));
-            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(authUser,null,authUser.getAuthorities()));
+            // AuthUser 생성자에 맞게 수정
+            AuthUser authUser = new AuthUser(
+                    Long.parseLong(claims.getSubject()),
+                    "",
+                    (String) claims.get("email"),
+                    userRole.name(),
+                    authorities
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(authUser, null, authUser.getAuthorities())
+            );
         }
 
         filterChain.doFilter(request, response);
     }
+
 
 
 }
