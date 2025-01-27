@@ -1,8 +1,8 @@
 package org.example.expert.domain.auth.service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.expert.config.CustomPasswordEncoder;
 import org.example.expert.config.JwtUtil;
-import org.example.expert.config.PasswordEncoder;
 import org.example.expert.domain.auth.dto.request.SigninRequest;
 import org.example.expert.domain.auth.dto.request.SignupRequest;
 import org.example.expert.domain.auth.dto.response.SigninResponse;
@@ -12,19 +12,20 @@ import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.enums.UserRole;
 import org.example.expert.domain.user.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final CustomPasswordEncoder passwordEncoder; // 이름 변경
     private final JwtUtil jwtUtil;
 
-    @Transactional
+
     public SignupResponse signup(SignupRequest signupRequest) {
 
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
@@ -32,28 +33,29 @@ public class AuthService {
         }
 
         String encodedPassword = passwordEncoder.encode(signupRequest.getPassword());
-
         UserRole userRole = UserRole.of(signupRequest.getUserRole());
 
-        User newUser = new User(
-                signupRequest.getEmail(),
-                encodedPassword,
-                userRole
-        );
+        User newUser = User.builder()
+                .email(signupRequest.getEmail())
+                .password(encodedPassword)
+                .userRole(userRole)
+                .build();
+
         User savedUser = userRepository.save(newUser);
 
+        // JWT 생성
         String bearerToken = jwtUtil.createToken(savedUser.getId(), savedUser.getEmail(), userRole);
-
-        return new SignupResponse(bearerToken);
+        System.out.println("토큰 만들어짐");
+        return new SignupResponse(bearerToken); // 토큰 반환
     }
 
     public SigninResponse signin(SigninRequest signinRequest) {
         User user = userRepository.findByEmail(signinRequest.getEmail()).orElseThrow(
-                () -> new InvalidRequestException("가입되지 않은 유저입니다."));
+                () -> new InvalidRequestException("가입되지 않은 유저입니다.")
+        );
 
-        // 로그인 시 이메일과 비밀번호가 일치하지 않을 경우 401을 반환합니다.
         if (!passwordEncoder.matches(signinRequest.getPassword(), user.getPassword())) {
-            throw new AuthException("잘못된 비밀번호입니다.");
+            throw new AuthException("잘못된 비밀번호입니다.", HttpStatus.UNAUTHORIZED);
         }
 
         String bearerToken = jwtUtil.createToken(user.getId(), user.getEmail(), user.getUserRole());
